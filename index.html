@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Simulador Milionário</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: radial-gradient(circle at top, #1b1f3b, #05060f 70%);
+    color: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    margin: 18px 0 4px;
+    font-size: 28px;
+    letter-spacing: 1px;
+    text-align: center;
+    background: linear-gradient(90deg, #ffd700, #fff5c0, #ffd700);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 20px rgba(255,215,0,0.3);
+  }
+
+  .rank-label {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .company-label {
+    font-size: 13px;
+    opacity: 0.6;
+    margin-top: -4px;
+    margin-bottom: 8px;
+  }
+
+  .top-bar {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 6px;
+  }
+
+  .stat-box {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: 14px;
+    text-align: center;
+    min-width: 110px;
+  }
+  .stat-box b { display:block; font-size: 16px; margin-top:2px; }
+
+  .main-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+    width: 100%;
+    max-width: 960px;
+    padding: 16px;
+  }
+
+  .coin-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+  }
+
+  #coin {
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 66px;
+    border: 6px solid rgba(255,255,255,0.25);
+    box-shadow: 0 0 40px rgba(255,215,0,0.35), inset 0 0 30px rgba(0,0,0,0.3);
+    transition: transform 0.06s ease;
+    background: radial-gradient(circle at 35% 30%, #ffe98a, #d4a017 60%, #8a6200 100%);
+  }
+  #coin:active { transform: scale(0.92); }
+
+  .float-text {
+    position: fixed;
+    font-weight: bold;
+    color: #ffe98a;
+    pointer-events: none;
+    animation: floatUp 0.9s ease-out forwards;
+    font-size: 20px;
+    text-shadow: 0 0 6px rgba(0,0,0,0.6);
+    z-index: 50;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-70px); }
+  }
+
+  .click-info {
+    margin-top: 14px;
+    font-size: 14px;
+    opacity: 0.85;
+    text-align: center;
+  }
+  .passive-info {
+    margin-top: 4px;
+    font-size: 13px;
+    opacity: 0.7;
+    text-align: center;
+  }
+
+  .save-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .save-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #eee;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .save-btn:hover { background: rgba(255,255,255,0.15); }
+  .save-btn.danger { border-color: rgba(255,90,90,0.4); color: #ffb3b3; }
+
+  .save-status {
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: 0.55;
+    text-align: center;
+    min-height: 14px;
+  }
+
+  .panel {
+    flex: 1.6;
+    min-width: 300px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 90px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #eee;
+    padding: 8px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: background 0.15s;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #ffd700, #b8860b);
+    color: #1a1a1a;
+  }
+
+  .tab-content {
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+  .item.affordable { border-color: rgba(255,215,0,0.4); }
+  .item.locked { opacity: 0.4; }
+
+  .item-info { font-size: 13px; }
+  .item-info .name { font-weight: bold; font-size: 14px; }
+  .item-info .desc { opacity: 0.7; font-size: 12px; }
+  .item-info .owned { opacity: 0.6; font-size: 11px; margin-top: 2px; }
+
+  .buy-btn {
+    background: linear-gradient(135deg, #ffd700, #b8860b);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: bold;
+    color: #1a1a1a;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .buy-btn:disabled {
+    background: #444;
+    color: #999;
+    cursor: not-allowed;
+  }
+
+  .rank-progress {
+    width: 100%;
+    max-width: 500px;
+    margin: 10px auto 0;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    overflow: hidden;
+    height: 18px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .rank-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffb800, #ffe98a);
+    transition: width 0.3s ease;
+  }
+
+  .rankup-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ffd700, #b8860b);
+    color: #1a1a1a;
+    font-weight: bold;
+    padding: 14px 26px;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(255,215,0,0.6);
+    animation: toastPop 2.5s ease forwards;
+    z-index: 100;
+    text-align: center;
+  }
+  @keyframes toastPop {
+    0% { opacity: 0; transform: translate(-50%, -20px); }
+    10% { opacity: 1; transform: translate(-50%, 0); }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -10px); }
+  }
+
+  .save-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,20,30,0.9);
+    border: 1px solid rgba(255,215,0,0.4);
+    color: #ffe98a;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    animation: toastPop 1.8s ease forwards;
+    z-index: 100;
+  }
+
+  /* Onboarding modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  .modal-box {
+    background: linear-gradient(160deg, #23264a, #12142b);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 18px;
+    padding: 28px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255,215,0,0.2);
+  }
+  .modal-box h2 {
+    margin-top: 0;
+    color: #ffd700;
+  }
+  .modal-box p { font-size: 14px; opacity: 0.85; }
+  .modal-box input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 14px;
+    margin: 10px 0 16px;
+  }
+  .type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .type-option {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 10px 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .type-option .emoji { font-size: 26px; display: block; margin-bottom: 4px; }
+  .type-option.selected {
+    border-color: #ffd700;
+    background: rgba(255,215,0,0.15);
+  }
+  .start-btn {
+    background: linear-gradient(135deg, #ffd700, #b8860b);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-weight: bold;
+    color: #1a1a1a;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .start-btn:disabled { background: #444; color: #999; cursor: not-allowed; }
+  .continue-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #eee;
+    margin-top: 10px;
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="onboardModal">
+  <div class="modal-box" id="onboardBox">
+    <h2>🏢 Funde sua Empresa</h2>
+    <p>Antes de começar a faturar, dê um nome e escolha o ramo da sua empresa.</p>
+    <input type="text" id="companyNameInput" placeholder="Nome da empresa (ex: Silva & Cia)" maxlength="24">
+    <div class="type-grid" id="typeGrid"></div>
+    <button class="start-btn" id="startBtn" disabled>Fundar Empresa</button>
+  </div>
+</div>
+
+<h1>💰 Simulador Milionário 💰</h1>
+<div class="company-label" id="companyLabel"></div>
+<div class="rank-label" id="rankLabel">Classe: Iniciante</div>
+
+<div class="top-bar">
+  <div class="stat-box">Dinheiro<br><b id="moneyDisplay">R$ 0</b></div>
+  <div class="stat-box">Por clique<br><b id="clickValueDisplay">R$ 1</b></div>
+  <div class="stat-box">Por segundo<br><b id="passiveDisplay">R$ 0</b></div>
+  <div class="stat-box">Total ganho<br><b id="totalEarnedDisplay">R$ 0</b></div>
+</div>
+
+<div class="rank-progress">
+  <div class="rank-progress-fill" id="rankProgressFill" style="width:0%"></div>
+</div>
+
+<div class="main-area">
+  <div class="coin-area">
+    <div id="coin">🪙</div>
+    <div class="click-info">Clique na moeda para faturar!</div>
+    <div class="passive-info" id="passiveInfo"></div>
+
+    <div class="save-bar">
+      <button class="save-btn" id="manualSaveBtn">💾 Salvar agora</button>
+      <button class="save-btn danger" id="resetBtn">🗑️ Reiniciar jogo</button>
+    </div>
+    <div class="save-status" id="saveStatus"></div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="click">👆 Clique</button>
+      <button class="tab-btn" data-tab="passive">⏱️ Passivo</button>
+      <button class="tab-btn" data-tab="business">🏢 Empresas</button>
+      <button class="tab-btn" data-tab="class">📈 Classe</button>
+    </div>
+    <div class="tab-content" id="tabContent"></div>
+  </div>
+</div>
+
+<script>
+  /* ---------- DADOS ---------- */
+
+  const SAVE_KEY = "simulador-milionario-save";
+
+  const companyTypes = [
+    { id: "food", name: "Alimentação", emoji: "🍔" },
+    { id: "tech", name: "Tecnologia", emoji: "💻" },
+    { id: "fashion", name: "Moda", emoji: "👗" },
+    { id: "services", name: "Serviços", emoji: "🔧" },
+    { id: "finance", name: "Finanças", emoji: "💵" },
+    { id: "industry", name: "Indústria", emoji: "🏭" },
+  ];
+
+  const ranks = [
+    { name: "Iniciante", threshold: 0, mult: 1, emoji: "🪙", color: "radial-gradient(circle at 35% 30%, #ffe98a, #d4a017 60%, #8a6200 100%)" },
+    { name: "Trabalhador", threshold: 500, mult: 2, emoji: "🥉", color: "radial-gradient(circle at 35% 30%, #e6a97a, #b5651d 60%, #6b3a10 100%)" },
+    { name: "Poupador", threshold: 5000, mult: 4, emoji: "🥈", color: "radial-gradient(circle at 35% 30%, #f0f0f0, #b0b0b0 60%, #707070 100%)" },
+    { name: "Investidor", threshold: 50000, mult: 8, emoji: "🥇", color: "radial-gradient(circle at 35% 30%, #fff2a8, #ffd700 60%, #b8860b 100%)" },
+    { name: "Empresário", threshold: 300000, mult: 16, emoji: "💎", color: "radial-gradient(circle at 35% 30%, #b3f0ff, #4dd2ff 60%, #0080aa 100%)" },
+    { name: "Magnata", threshold: 1500000, mult: 32, emoji: "👑", color: "radial-gradient(circle at 35% 30%, #ffd6f5, #ff66cc 60%, #a3007a 100%)" },
+    { name: "Bilionário", threshold: 8000000, mult: 64, emoji: "🚀", color: "radial-gradient(circle at 35% 30%, #d6b3ff, #9b4dff 60%, #4b0082 100%)" },
+    { name: "Milionário Lendário", threshold: 40000000, mult: 128, emoji: "🏆", color: "radial-gradient(circle at 35% 30%, #ffffff, #ffe98a 50%, #ffb800 100%)" },
+  ];
+
+  const clickUpgrades = [
+    { id: "dedo", name: "Dedo Rápido", desc: "+1 por clique", baseCost: 10, baseValue: 1, count: 0 },
+    { id: "luva", name: "Luva de Couro", desc: "+5 por clique", baseCost: 100, baseValue: 5, count: 0 },
+    { id: "maquina", name: "Máquina de Contar", desc: "+25 por clique", baseCost: 800, baseValue: 25, count: 0 },
+    { id: "robo", name: "Robô Contador", desc: "+120 por clique", baseCost: 5000, baseValue: 120, count: 0 },
+    { id: "fabricaClique", name: "Fábrica de Cliques", desc: "+600 por clique", baseCost: 30000, baseValue: 600, count: 0 },
+    { id: "banco", name: "Banco Pessoal", desc: "+3000 por clique", baseCost: 180000, baseValue: 3000, count: 0 },
+    { id: "bolsa", name: "Sala de Bolsa de Valores", desc: "+15000 por clique", baseCost: 1000000, baseValue: 15000, count: 0 },
+    { id: "impero", name: "Império Financeiro", desc: "+80000 por clique", baseCost: 6000000, baseValue: 80000, count: 0 },
+  ];
+
+  const passiveUpgrades = [
+    { id: "contador", name: "Contador Automático", desc: "+2 por segundo", baseCost: 200, baseValue: 2, count: 0 },
+    { id: "cobranca", name: "Sistema de Cobrança", desc: "+10 por segundo", baseCost: 1200, baseValue: 10, count: 0 },
+    { id: "gestao", name: "Software de Gestão", desc: "+50 por segundo", baseCost: 6000, baseValue: 50, count: 0 },
+    { id: "ia", name: "Inteligência Artificial", desc: "+250 por segundo", baseCost: 35000, baseValue: 250, count: 0 },
+    { id: "blockchain", name: "Blockchain Financeiro", desc: "+1200 por segundo", baseCost: 200000, baseValue: 1200, count: 0 },
+    { id: "servidores", name: "Rede Global de Servidores", desc: "+6000 por segundo", baseCost: 1200000, baseValue: 6000, count: 0 },
+  ];
+
+  const businesses = [
+    { id: "limonada", name: "Barraca de Limonada", emoji: "🍋", desc: "1 por segundo cada", baseCost: 50, baseIncome: 1, count: 0 },
+    { id: "lavarapido", name: "Lava-Rápido", emoji: "🚗", desc: "6 por segundo cada", baseCost: 300, baseIncome: 6, count: 0 },
+    { id: "padaria", name: "Padaria", emoji: "🥖", desc: "30 por segundo cada", baseCost: 1500, baseIncome: 30, count: 0 },
+    { id: "loja", name: "Loja de Roupas", emoji: "👕", desc: "150 por segundo cada", baseCost: 8000, baseIncome: 150, count: 0 },
+    { id: "restaurante", name: "Restaurante", emoji: "🍽️", desc: "700 por segundo cada", baseCost: 40000, baseIncome: 700, count: 0 },
+    { id: "startup", name: "Startup de Tecnologia", emoji: "💻", desc: "3500 por segundo cada", baseCost: 200000, baseIncome: 3500, count: 0 },
+    { id: "fabrica", name: "Fábrica", emoji: "🏭", desc: "18000 por segundo cada", baseCost: 1000000, baseIncome: 18000, count: 0 },
+    { id: "hoteis", name: "Rede de Hotéis", emoji: "🏨", desc: "100000 por segundo cada", baseCost: 6000000, baseIncome: 100000, count: 0 },
+    { id: "bancoinvest", name: "Banco de Investimentos", emoji: "🏦", desc: "500000 por segundo cada", baseCost: 30000000, baseIncome: 500000, count: 0 },
+    { id: "corporacao", name: "Corporação Multinacional", emoji: "🌐", desc: "2500000 por segundo cada", baseCost: 150000000, baseIncome: 2500000, count: 0 },
+  ];
+
+  const classUpgrades = [
+    { id: "curso", name: "Curso de Gestão", desc: "+0,2x no multiplicador de classe", baseCost: 5000, baseValue: 0.2, count: 0 },
+    { id: "mentoria", name: "Mentoria Empresarial", desc: "+0,5x no multiplicador de classe", baseCost: 50000, baseValue: 0.5, count: 0 },
+    { id: "mba", name: "MBA Internacional", desc: "+1x no multiplicador de classe", baseCost: 500000, baseValue: 1, count: 0 },
+    { id: "conselho", name: "Conselho de Bilionários", desc: "+2x no multiplicador de classe", baseCost: 5000000, baseValue: 2, count: 0 },
+  ];
+
+  /* ---------- ESTADO ---------- */
+
+  let money = 0;
+  let totalEarned = 0;
+  let baseClickValue = 1;
+  let rankIndex = 0;
+  let currentTab = "click";
+  let companyName = "";
+  let companyType = null;
+  let saveTimer = null;
+
+  /* ---------- ELEMENTOS ---------- */
+
+  const moneyDisplay = document.getElementById("moneyDisplay");
+  const clickValueDisplay = document.getElementById("clickValueDisplay");
+  const passiveDisplay = document.getElementById("passiveDisplay");
+  const totalEarnedDisplay = document.getElementById("totalEarnedDisplay");
+  const rankLabel = document.getElementById("rankLabel");
+  const companyLabel = document.getElementById("companyLabel");
+  const rankProgressFill = document.getElementById("rankProgressFill");
+  const coin = document.getElementById("coin");
+  const tabContent = document.getElementById("tabContent");
+  const passiveInfo = document.getElementById("passiveInfo");
+  const saveStatus = document.getElementById("saveStatus");
+
+  /* ---------- SALVAMENTO ---------- */
+
+  function buildSaveData() {
+    return {
+      money,
+      totalEarned,
+      baseClickValue,
+      rankIndex,
+      companyName,
+      companyTypeId: companyType ? companyType.id : null,
+      clickUpgrades: clickUpgrades.map(u => ({ id: u.id, count: u.count })),
+      passiveUpgrades: passiveUpgrades.map(u => ({ id: u.id, count: u.count })),
+      businesses: businesses.map(b => ({ id: b.id, count: b.count })),
+      classUpgrades: classUpgrades.map(u => ({ id: u.id, count: u.count })),
+      savedAt: Date.now(),
+    };
+  }
+
+  function setSaveStatus(text) {
+    saveStatus.textContent = text;
+  }
+
+  async function saveGame(showToast) {
+    try {
+      const data = buildSaveData();
+      const result = await window.storage.set(SAVE_KEY, JSON.stringify(data), false);
+      if (result) {
+        const time = new Date().toLocaleTimeString("pt-BR");
+        setSaveStatus("Salvo às " + time);
+        if (showToast) spawnSaveToast("💾 Jogo salvo!");
+      } else {
+        setSaveStatus("Falha ao salvar.");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar:", err);
+      setSaveStatus("Falha ao salvar.");
+    }
+  }
+
+  function applyCounts(list, savedList) {
+    if (!savedList) return;
+    savedList.forEach(saved => {
+      const item = list.find(x => x.id === saved.id);
+      if (item) item.count = saved.count || 0;
+    });
+  }
+
+  async function loadGame() {
+    try {
+      const result = await window.storage.get(SAVE_KEY, false);
+      if (!result || !result.value) return false;
+      const data = JSON.parse(result.value);
+
+      money = data.money || 0;
+      totalEarned = data.totalEarned || 0;
+      baseClickValue = data.baseClickValue || 1;
+      rankIndex = data.rankIndex || 0;
+      companyName = data.companyName || "";
+      companyType = companyTypes.find(t => t.id === data.companyTypeId) || null;
+
+      applyCounts(clickUpgrades, data.clickUpgrades);
+      applyCounts(passiveUpgrades, data.passiveUpgrades);
+      applyCounts(businesses, data.businesses);
+      applyCounts(classUpgrades, data.classUpgrades);
+
+      coin.style.background = ranks[rankIndex].color;
+      coin.textContent = ranks[rankIndex].emoji;
+
+      return true;
+    } catch (err) {
+      console.log("Nenhum jogo salvo encontrado ou erro ao carregar:", err);
+      return false;
+    }
+  }
+
+  async function resetGame() {
+    if (!confirm("Tem certeza que deseja reiniciar o jogo? Todo o progresso será perdido.")) return;
+    try {
+      await window.storage.delete(SAVE_KEY, false);
+    } catch (err) {
+      console.log("Nada para apagar ou erro ao apagar:", err);
+    }
+    location.reload();
+  }
+
+  function spawnSaveToast(msg) {
+    const el = document.createElement("div");
+    el.className = "save-toast";
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1800);
+  }
+
+  document.getElementById("manualSaveBtn").addEventListener("click", () => saveGame(true));
+  document.getElementById("resetBtn").addEventListener("click", resetGame);
+
+  window.addEventListener("beforeunload", () => {
+    saveGame(false);
+  });
+
+  /* ---------- ONBOARDING ---------- */
+
+  const typeGrid = document.getElementById("typeGrid");
+  const companyNameInput = document.getElementById("companyNameInput");
+  const startBtn = document.getElementById("startBtn");
+  const onboardModal = document.getElementById("onboardModal");
+  const onboardBox = document.getElementById("onboardBox");
+
+  companyTypes.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "type-option";
+    div.innerHTML = `<span class="emoji">${t.emoji}</span>${t.name}`;
+    div.addEventListener("click", () => {
+      document.querySelectorAll(".type-option").forEach(el => el.classList.remove("selected"));
+      div.classList.add("selected");
+      companyType = t;
+      validateStart();
+    });
+    typeGrid.appendChild(div);
+  });
+
+  function validateStart() {
+    startBtn.disabled = !(companyType && companyNameInput.value.trim().length > 0);
+  }
+  companyNameInput.addEventListener("input", validateStart);
+
+  startBtn.addEventListener("click", () => {
+    companyName = companyNameInput.value.trim() || "Minha Empresa";
+    onboardModal.style.display = "none";
+    companyLabel.textContent = `${companyType.emoji} ${companyName} — ${companyType.name}`;
+    updateUI();
+    saveGame(false);
+  });
+
+  function showContinueOption() {
+    onboardBox.innerHTML = `
+      <h2>👋 Bem-vindo de volta!</h2>
+      <p>Encontramos um jogo salvo${companyName ? " de <b>" + companyName + "</b>" : ""}. Deseja continuar de onde parou ou começar um novo negócio?</p>
+      <button class="start-btn" id="continueSavedBtn">Continuar jogo salvo</button>
+      <button class="start-btn continue-btn" id="newGameBtn">Começar um novo negócio</button>
+    `;
+    document.getElementById("continueSavedBtn").addEventListener("click", () => {
+      onboardModal.style.display = "none";
+      companyLabel.textContent = companyType ? `${companyType.emoji} ${companyName} — ${companyType.name}` : companyName;
+      updateUI();
+    });
+    document.getElementById("newGameBtn").addEventListener("click", async () => {
+      try { await window.storage.delete(SAVE_KEY, false); } catch (e) {}
+      location.reload();
+    });
+  }
+
+  /* ---------- FORMATAÇÃO ---------- */
+
+  function formatNumber(n) {
+    if (n >= 1e12) return "R$ " + (n / 1e12).toFixed(2) + "T";
+    if (n >= 1e9) return "R$ " + (n / 1e9).toFixed(2) + "B";
+    if (n >= 1e6) return "R$ " + (n / 1e6).toFixed(2) + "M";
+    if (n >= 1e3) return "R$ " + (n / 1e3).toFixed(2) + "K";
+    return "R$ " + Math.floor(n).toLocaleString("pt-BR");
+  }
+
+  /* ---------- CÁLCULOS ---------- */
+
+  function getClassBonusMult() {
+    return classUpgrades.reduce((sum, u) => sum + u.baseValue * u.count, 0);
+  }
+
+  function getTotalMult() {
+    return ranks[rankIndex].mult + getClassBonusMult();
+  }
+
+  function getClickValue() {
+    const upgradeBonus = clickUpgrades.reduce((sum, u) => sum + u.baseValue * u.count, 0);
+    return (baseClickValue + upgradeBonus) * getTotalMult();
+  }
+
+  function getBusinessIncome() {
+    return businesses.reduce((sum, b) => sum + b.baseIncome * b.count, 0);
+  }
+
+  function getPassiveUpgradeIncome() {
+    return passiveUpgrades.reduce((sum, u) => sum + u.baseValue * u.count, 0);
+  }
+
+  function getPassiveIncome() {
+    return (getBusinessIncome() + getPassiveUpgradeIncome()) * getTotalMult();
+  }
+
+  function costFor(item, growth) {
+    return Math.floor(item.baseCost * Math.pow(growth, item.count));
+  }
+
+  /* ---------- CLASSES ---------- */
+
+  function checkRankUp() {
+    let newRankIndex = rankIndex;
+    for (let i = ranks.length - 1; i >= 0; i--) {
+      if (money >= ranks[i].threshold) { newRankIndex = i; break; }
+    }
+    if (newRankIndex > rankIndex) {
+      rankIndex = newRankIndex;
+      coin.style.background = ranks[rankIndex].color;
+      coin.textContent = ranks[rankIndex].emoji;
+      showRankUpToast();
+    }
+  }
+
+  function updateRankUI() {
+    rankLabel.textContent = "Classe: " + ranks[rankIndex].name + " (x" + getTotalMult().toFixed(1) + " no total)";
+    const next = ranks[rankIndex + 1];
+    if (next) {
+      const prevThreshold = ranks[rankIndex].threshold;
+      const progress = Math.min(100, ((money - prevThreshold) / (next.threshold - prevThreshold)) * 100);
+      rankProgressFill.style.width = progress + "%";
+    } else {
+      rankProgressFill.style.width = "100%";
+    }
+  }
+
+  function showRankUpToast() {
+    const toast = document.createElement("div");
+    toast.className = "rankup-toast";
+    toast.textContent = "🎉 Você subiu de classe: " + ranks[rankIndex].name + "! Moeda mais forte agora!";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  }
+
+  /* ---------- CLIQUE ---------- */
+
+  function spawnFloatText(x, y, amount) {
+    const el = document.createElement("div");
+    el.className = "float-text";
+    el.textContent = "+" + formatNumber(amount);
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+
+  coin.addEventListener("click", (e) => {
+    const value = getClickValue();
+    money += value;
+    totalEarned += value;
+    spawnFloatText(e.clientX - 20, e.clientY - 20, value);
+    coin.style.transform = "scale(0.9)";
+    setTimeout(() => coin.style.transform = "scale(1)", 80);
+    checkRankUp();
+    updateUI();
+  });
+
+  /* ---------- LOOP PASSIVO ---------- */
+
+  setInterval(() => {
+    const income = getPassiveIncome() / 10;
+    if (income > 0) {
+      money += income;
+      totalEarned += income;
+      checkRankUp();
+      updateUI();
+    }
+  }, 100);
+
+  /* ---------- SALVAMENTO AUTOMÁTICO ---------- */
+
+  setInterval(() => {
+    if (onboardModal.style.display === "none") {
+      saveGame(false);
+    }
+  }, 30000);
+
+  /* ---------- COMPRAS ---------- */
+
+  function buyClickUpgrade(id) {
+    const u = clickUpgrades.find(x => x.id === id);
+    const cost = costFor(u, 1.15);
+    if (money >= cost) {
+      money -= cost;
+      u.count++;
+      checkRankUp();
+      updateUI();
+      saveGame(false);
+    }
+  }
+
+  function buyPassiveUpgrade(id) {
+    const u = passiveUpgrades.find(x => x.id === id);
+    const cost = costFor(u, 1.15);
+    if (money >= cost) {
+      money -= cost;
+      u.count++;
+      checkRankUp();
+      updateUI();
+      saveGame(false);
+    }
+  }
+
+  function buyBusiness(id) {
+    const b = businesses.find(x => x.id === id);
+    const cost = costFor(b, 1.15);
+    if (money >= cost) {
+      money -= cost;
+      b.count++;
+      checkRankUp();
+      updateUI();
+      saveGame(false);
+    }
+  }
+
+  function buyClassUpgrade(id) {
+    const u = classUpgrades.find(x => x.id === id);
+    const cost = costFor(u, 1.8);
+    if (money >= cost) {
+      money -= cost;
+      u.count++;
+      checkRankUp();
+      updateUI();
+      saveGame(false);
+    }
+  }
+
+  /* ---------- RENDERIZAÇÃO DAS ABAS ---------- */
+
+  function renderClickTab() {
+    let html = "";
+    clickUpgrades.forEach(u => {
+      const cost = costFor(u, 1.15);
+      const affordable = money >= cost;
+      html += `
+        <div class="item ${affordable ? "affordable" : ""}">
+          <div class="item-info">
+            <div class="name">${u.name}</div>
+            <div class="desc">${u.desc}</div>
+            <div class="owned">Possui: ${u.count}</div>
+          </div>
+          <button class="buy-btn" ${affordable ? "" : "disabled"} onclick="buyClickUpgrade('${u.id}')">${formatNumber(cost)}</button>
+        </div>`;
+    });
+    return html;
+  }
+
+  function renderPassiveTab() {
+    let html = "";
+    passiveUpgrades.forEach(u => {
+      const cost = costFor(u, 1.15);
+      const affordable = money >= cost;
+      html += `
+        <div class="item ${affordable ? "affordable" : ""}">
+          <div class="item-info">
+            <div class="name">${u.name}</div>
+            <div class="desc">${u.desc}</div>
+            <div class="owned">Possui: ${u.count}</div>
+          </div>
+          <button class="buy-btn" ${affordable ? "" : "disabled"} onclick="buyPassiveUpgrade('${u.id}')">${formatNumber(cost)}</button>
+        </div>`;
+    });
+    return html;
+  }
+
+  function renderBusinessTab() {
+    let html = "";
+    businesses.forEach(b => {
+      const cost = costFor(b, 1.15);
+      const affordable = money >= cost;
+      html += `
+        <div class="item ${affordable ? "affordable" : ""}">
+          <div class="item-info">
+            <div class="name">${b.emoji} ${b.name}</div>
+            <div class="desc">${b.desc}</div>
+            <div class="owned">Possui: ${b.count}</div>
+          </div>
+          <button class="buy-btn" ${affordable ? "" : "disabled"} onclick="buyBusiness('${b.id}')">${formatNumber(cost)}</button>
+        </div>`;
+    });
+    return html;
+  }
+
+  function renderClassTab() {
+    let html = `<div class="item">
+        <div class="item-info">
+          <div class="name">Classe atual: ${ranks[rankIndex].name}</div>
+          <div class="desc">Multiplicador de classe: x${ranks[rankIndex].mult}</div>
+          <div class="owned">Bônus extra de melhorias: +${getClassBonusMult().toFixed(1)}x</div>
+        </div>
+      </div>`;
+    classUpgrades.forEach(u => {
+      const cost = costFor(u, 1.8);
+      const affordable = money >= cost;
+      html += `
+        <div class="item ${affordable ? "affordable" : ""}">
+          <div class="item-info">
+            <div class="name">${u.name}</div>
+            <div class="desc">${u.desc}</div>
+            <div class="owned">Possui: ${u.count}</div>
+          </div>
+          <button class="buy-btn" ${affordable ? "" : "disabled"} onclick="buyClassUpgrade('${u.id}')">${formatNumber(cost)}</button>
+        </div>`;
+    });
+    return html;
+  }
+
+  function renderTab() {
+    if (currentTab === "click") tabContent.innerHTML = renderClickTab();
+    else if (currentTab === "passive") tabContent.innerHTML = renderPassiveTab();
+    else if (currentTab === "business") tabContent.innerHTML = renderBusinessTab();
+    else if (currentTab === "class") tabContent.innerHTML = renderClassTab();
+  }
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentTab = btn.dataset.tab;
+      renderTab();
+    });
+  });
+
+  /* ---------- ATUALIZAÇÃO GERAL DA UI ---------- */
+
+  function updateUI() {
+    moneyDisplay.textContent = formatNumber(money);
+    clickValueDisplay.textContent = formatNumber(getClickValue());
+    passiveDisplay.textContent = formatNumber(getPassiveIncome());
+    totalEarnedDisplay.textContent = formatNumber(totalEarned);
+    passiveInfo.textContent = getPassiveIncome() > 0
+      ? "Sua empresa está faturando sozinha em segundo plano."
+      : "";
+    updateRankUI();
+    renderTab();
+  }
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js")
+      .then(() => console.log("Service Worker ativo!"))
+      .catch(error => console.error("Erro:", error));
+  }
+
+  /* ---------- INICIALIZAÇÃO ---------- */
+
+  (async function init() {
+    const hasSave = await loadGame();
+    if (hasSave) {
+      showContinueOption();
+    } else {
+      onboardModal.style.display = "flex";
+    }
+    updateUI();
+  })();
+</script>
+</body>
+</html>
